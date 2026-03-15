@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="단가계산기">
+<meta name="theme-color" content="#f5f2ec">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%EB%8B%A8%EA%B0%80%20%EA%B3%84%EC%82%B0%EA%B8%B0%22%2C%22short_name%22%3A%22%EB%8B%A8%EA%B0%80%EA%B3%84%EC%82%B0%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f5f2ec%22%2C%22theme_color%22%3A%22%23c94f2a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%25270%25200%2520100%2520100%2527%253E%253Crect%2520width%3D%2527100%2527%2520height%3D%2527100%2527%2520rx%3D%252720%2527%2520fill%3D%2527%2523c94f2a%2527%2F%253E%253Ctext%2520y%3D%252765%2527%2520x%3D%252750%2527%2520text-anchor%3D%2527middle%2527%2520font-size%3D%252755%2527%253E%25F0%259F%2593%2590%253C%2F%252Ftext%253E%253C%2F%252Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<title>단가 계산기 · 달력</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2ec;
+  --surface: #fffdf8;
+  --surface2: #f0ede4;
+  --border: #ddd8cc;
+  --border2: #c8c2b4;
+  --ink: #1a1814;
+  --ink2: #5a5548;
+  --ink3: #9a9488;
+  --accent: #c94f2a;
+  --accent2: #2a6cc9;
+  --accent3: #2a9c5c;
+  --sun: #c94f2a;
+  --sat: #2a6cc9;
+  --today-bg: #1a1814;
+  --today-text: #f5f2ec;
+  --has-record: rgba(42,156,92,0.12);
+  --has-record-border: rgba(42,156,92,0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── 레이아웃 ── */
+.app {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  min-height: 100vh;
+}
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--border2); }
+}
+
+/* ── 사이드바 ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border2);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 24px;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.brand-icon {
+  width: 40px; height: 40px;
+  background: var(--ink);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+
+.brand-name { font-size: 20px; font-weight: 900; letter-spacing: -1px; }
+.brand-name span { color: var(--accent); }
+
+/* 단가 설정 */
+.panel-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: var(--ink3);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.price-row:focus-within { border-color: var(--ink); }
+
+.price-prefix {
+  padding: 0 12px;
+  font-size: 16px;
+  color: var(--ink2);
+  border-right: 1.5px solid var(--border);
+  height: 46px;
+  display: flex; align-items: center;
+  font-family: 'DM Mono', monospace;
+}
+
+.price-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 20px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 0 12px;
+  height: 46px;
+  text-align: right;
+}
+
+.price-suffix {
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--ink3);
+  border-left: 1.5px solid var(--border);
+  height: 46px;
+  display: flex; align-items: center;
+  white-space: nowrap;
+}
+
+.unit-pills {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.pill {
+  padding: 5px 13px;
+  border: 1.5px solid var(--border2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: none;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.pill.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+/* 치수 입력 */
+.dim-group { display: flex; align-items: center; gap: 8px; }
+
+.dim-wrap { flex: 1; }
+
+.dim-label { font-size: 11px; color: var(--ink3); margin-bottom: 5px; font-weight: 600; }
+
+.dim-field {
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 18px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  color: var(--ink);
+  outline: none;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.dim-field:focus { border-color: var(--ink); }
+
+.times-sym { font-size: 20px; color: var(--ink3); padding-top: 22px; }
+
+/* 결과 */
+.result-panel {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px;
+  color: var(--bg);
+}
+
+.rp-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+
+.rp-key { font-size: 11px; color: rgba(245,242,236,0.5); font-weight: 500; }
+.rp-val { font-family: 'DM Mono', monospace; font-size: 14px; }
+
+.rp-total {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.rp-total-label { font-size: 12px; font-weight: 700; color: rgba(245,242,236,0.6); }
+.rp-total-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* 메모 */
+.note-field {
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.note-field:focus { border-color: var(--ink); }
+.note-field::placeholder { color: var(--ink3); }
+
+/* 추가 버튼 */
+.add-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.add-btn:hover { opacity: 0.88; }
+.add-btn:active { transform: scale(0.98); }
+
+/* ── 메인 영역 ── */
+.main {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 28px 28px 24px;
+  gap: 20px;
+}
+
+/* 월 헤더 전체 */
+.month-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mh-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-btn {
+  width: 36px; height: 36px;
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.nav-btn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.month-title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.month-title span { color: var(--accent); }
+
+/* 월 누적 요약 바 */
+.month-summary-bar {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
+.msb-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 12px;
+  padding: 12px 20px;
+  text-align: right;
+  min-width: 180px;
+  position: relative;
+  overflow: hidden;
+}
+
+.msb-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent3), var(--accent2));
+}
+
+.msb-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ink3);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.msb-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent3);
+  line-height: 1.1;
+}
+
+.msb-sub {
+  font-size: 11px;
+  color: var(--ink3);
+  margin-top: 3px;
+}
+
+/* 달력 */
+.calendar-wrap {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.cal-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1.5px solid var(--border2);
+}
+
+.cal-dow {
+  padding: 10px 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ink3);
+}
+
+.cal-dow.sun { color: var(--sun); }
+.cal-dow.sat { color: var(--sat); }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.cal-cell {
+  min-height: 90px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.cal-cell:nth-child(7n) { border-right: none; }
+.cal-cell:nth-last-child(-n+7) { border-bottom: none; }
+
+.cal-cell:hover { background: var(--surface2); }
+
+.cal-cell.empty { cursor: default; background: var(--bg); opacity: 0.5; }
+.cal-cell.empty:hover { background: var(--bg); }
+
+.cal-cell.today .day-num {
+  background: var(--today-bg);
+  color: var(--today-text);
+  border-radius: 6px;
+}
+
+.cal-cell.has-record {
+  background: var(--has-record);
+}
+
+.cal-cell.selected {
+  background: rgba(201,79,42,0.08);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.day-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 4px;
+}
+
+.cal-cell.sun .day-num { color: var(--sun); }
+.cal-cell.sat .day-num { color: var(--sat); }
+.cal-cell.today.sun .day-num,
+.cal-cell.today.sat .day-num { color: var(--today-text); }
+
+.cell-amount {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent3);
+  line-height: 1.3;
+}
+
+.cell-count {
+  font-size: 10px;
+  color: var(--ink3);
+}
+
+/* 선택된 날 기록 패널 */
+.day-panel {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 16px;
+  padding: 20px;
+  animation: fadeUp 0.2s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.dp-date { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; }
+.dp-total {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent3);
+}
+
+.dp-records { display: flex; flex-direction: column; gap: 8px; }
+
+.dp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.dp-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink3);
+  min-width: 20px;
+}
+
+.dp-info { flex: 1; }
+
+.dp-dims {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.dp-note { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+.dp-area { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--ink3); }
+
+.dp-amount {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent2);
+}
+
+.dp-del {
+  background: none;
+  border: none;
+  color: var(--ink3);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 4px;
+  transition: color 0.15s;
+  line-height: 1;
+}
+
+.dp-del:hover { color: var(--accent); }
+
+.dp-direct {
+  border-left: 3px solid var(--accent2);
+  background: rgba(42,108,201,0.06);
+}
+
+.dp-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--ink3);
+  font-size: 13px;
+}
+
+/* 월 누적 바 차트 */
+.monthly-chart {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-title { font-size: 14px; font-weight: 700; }
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 80px;
+}
+
+.bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.bar {
+  width: 100%;
+  background: var(--border);
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  min-height: 4px;
+  position: relative;
+}
+
+.bar.has-val { background: var(--accent3); }
+.bar.active { background: var(--accent); }
+
+.bar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--ink3);
+}
+
+@media (max-width: 600px) {
+  .main { padding: 16px; }
+  .cal-cell { min-height: 60px; }
+  .cell-amount { font-size: 9px; }
+  .month-title { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── 사이드바 ── -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">📐</div>
+      <div>
+        <div class="brand-name">단가 <span>계산기</span></div>
+      </div>
+    </div>
+
+    <!-- 단가 -->
+    <div>
+      <div class="panel-label">단가 설정</div>
+      <div class="price-row">
+        <div class="price-prefix">₩</div>
+        <input class="price-input" type="number" id="unitPrice" value="10000" min="0" oninput="calculate()">
+        <div class="price-suffix" id="unitSuffix">/ m²</div>
+      </div>
+      <div class="unit-pills">
+        <button class="pill active" onclick="setUnit('m²',this)">m²</button>
+        <button class="pill" onclick="setUnit('cm²',this)">cm²</button>
+        <button class="pill" onclick="setUnit('평',this)">평</button>
+        <button class="pill" onclick="setUnit('단위',this)">단위</button>
+      </div>
+    </div>
+
+    <!-- 치수 -->
+    <div>
+      <div class="panel-label">치수 입력</div>
+      <div class="dim-group">
+        <div class="dim-wrap">
+          <div class="dim-label">가로 (W)</div>
+          <input class="dim-field" type="number" id="width" placeholder="0" min="0" step="0.01" oninput="calculate()">
+        </div>
+        <div class="times-sym">×</div>
+        <div class="dim-wrap">
+          <div class="dim-label">세로 (H)</div>
+          <input class="dim-field" type="number" id="height" placeholder="0" min="0" step="0.01" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+
+    <!-- 결과 -->
+    <div class="result-panel">
+      <div class="rp-row">
+        <span class="rp-key">면적</span>
+        <span class="rp-val" id="areaResult">0.00 m²</span>
+      </div>
+      <div class="rp-row">
+        <span class="rp-key">단가</span>
+        <span class="rp-val" id="unitResult">₩10,000 / m²</span>
+      </div>
+      <div class="rp-total">
+        <span class="rp-total-label">금액</span>
+        <span class="rp-total-val" id="totalResult">₩0</span>
+      </div>
+    </div>
+
+    <!-- 메모 -->
+    <div>
+      <div class="panel-label">메모 (선택)</div>
+      <input class="note-field" type="text" id="noteInput" placeholder="예: 거실 바닥, 작업 #3…">
+    </div>
+
+    <!-- 날짜 선택 표시 -->
+    <div>
+      <div class="panel-label">기록할 날짜</div>
+      <div id="selectedDateDisplay" style="font-size:14px; font-weight:700; color:var(--accent); padding:6px 0;">
+        ← 달력에서 날짜를 선택하세요
+      </div>
+    </div>
+
+    <button class="add-btn" onclick="addRecord()">+ 이 날짜에 기록 추가</button>
+
+    <!-- 구분선 -->
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;height:1px;background:var(--border2)"></div>
+      <span style="font-size:11px;color:var(--ink3);font-weight:600;letter-spacing:1px;">또는</span>
+      <div style="flex:1;height:1px;background:var(--border2)"></div>
+    </div>
+
+    <!-- 직접 금액 입력 -->
+    <div>
+      <div class="panel-label">금액 직접 입력</div>
+      <div class="price-row" style="margin-bottom:8px;">
+        <div class="price-prefix">₩</div>
+        <input class="price-input" type="number" id="directAmount" placeholder="0" min="0" style="font-size:18px;">
+      </div>
+      <input class="note-field" type="text" id="directNote" placeholder="메모 (예: 추가 작업비, 자재비…)" style="margin-bottom:0;">
+    </div>
+
+    <button class="add-btn" onclick="addDirectRecord()" style="background:var(--accent2);">+ 금액 직접 추가</button>
+  </aside>
+
+  <!-- ── 메인 ── -->
+  <main class="main">
+
+    <!-- 월 헤더 -->
+    <div class="month-header">
+      <div class="mh-nav">
+        <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="month-title" id="monthTitle">2026년 <span>3월</span></div>
+        <button class="nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="month-summary-bar">
+        <div class="msb-card msb-total">
+          <div class="msb-label" id="monthYearLabel">월 누적</div>
+          <div class="msb-value" id="monthTotalDisp">₩0</div>
+          <div class="msb-sub" id="monthCountDisp">0건</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 달력 -->
+    <div class="calendar-wrap">
+      <div class="cal-header">
+        <div class="cal-dow sun">SUN</div>
+        <div class="cal-dow">MON</div>
+        <div class="cal-dow">TUE</div>
+        <div class="cal-dow">WED</div>
+        <div class="cal-dow">THU</div>
+        <div class="cal-dow">FRI</div>
+        <div class="cal-dow sat">SAT</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <!-- 선택된 날 패널 -->
+    <div class="day-panel" id="dayPanel" style="display:none"></div>
+
+    <!-- 주간 바 차트 -->
+    <div class="monthly-chart">
+      <div class="chart-header">
+        <div class="chart-title">주차별 금액</div>
+        <div style="font-size:11px; color:var(--ink3)" id="chartMonthLabel"></div>
+      </div>
+      <div class="chart-bars" id="chartBars"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── 상태 ──
+let records = JSON.parse(localStorage.getItem('calPriceRecords') || '[]');
+let currentUnit = 'm²';
+let viewYear, viewMonth;
+let selectedDate = null; // 'YYYY-MM-DD'
+
+const now = new Date();
+viewYear = now.getFullYear();
+viewMonth = now.getMonth(); // 0-based
+
+// ── 유틸 ──
+const fmt = n => Number(n).toLocaleString('ko-KR');
+const pad = n => String(n).padStart(2, '0');
+const dateKey = (y, m, d) => `${y}-${pad(m+1)}-${pad(d)}`;
+const todayKey = dateKey(now.getFullYear(), now.getMonth(), now.getDate());
+
+function getUnitPrice() { return parseFloat(document.getElementById('unitPrice').value) || 0; }
+
+function setUnit(unit, btn) {
+  currentUnit = unit;
+  document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('unitSuffix').textContent = '/ ' + unit;
+  calculate();
+}
+
+function calculate() {
+  const w = parseFloat(document.getElementById('width').value) || 0;
+  const h = parseFloat(document.getElementById('height').value) || 0;
+  const up = getUnitPrice();
+  const area = w * h;
+  const total = Math.round(area * up);
+  document.getElementById('areaResult').textContent = area.toFixed(4).replace(/\.?0+$/, '') + ' ' + currentUnit;
+  document.getElementById('unitResult').textContent = '₩' + fmt(up) + ' / ' + currentUnit;
+  document.getElementById('totalResult').textContent = '₩' + fmt(total);
+}
+
+document.getElementById('unitPrice').addEventListener('input', calculate);
+
+// ── 기록 추가 ──
+function addRecord() {
+  if (!selectedDate) { alert('달력에서 날짜를 먼저 선택해주세요.'); return; }
+  const w = parseFloat(document.getElementById('width').value);
+  const h = parseFloat(document.getElementById('height').value);
+  if (!w || !h) { alert('가로, 세로를 입력해주세요.'); return; }
+  const up = getUnitPrice();
+  const area = w * h;
+  const total = Math.round(area * up);
+  const note = document.getElementById('noteInput').value.trim();
+
+  records.push({
+    id: Date.now(),
+    date: selectedDate,
+    width: w, height: h, area,
+    unit: currentUnit,
+    unitPrice: up,
+    total, note
+  });
+  save();
+  renderAll();
+  document.getElementById('width').value = '';
+  document.getElementById('height').value = '';
+  document.getElementById('noteInput').value = '';
+  calculate();
+}
+
+function addDirectRecord() {
+  if (!selectedDate) { alert('달력에서 날짜를 먼저 선택해주세요.'); return; }
+  const amount = parseFloat(document.getElementById('directAmount').value);
+  if (!amount || amount <= 0) { alert('금액을 입력해주세요.'); return; }
+  const note = document.getElementById('directNote').value.trim();
+  records.push({
+    id: Date.now(),
+    date: selectedDate,
+    type: 'direct',
+    total: Math.round(amount),
+    note: note || '직접 입력'
+  });
+  save();
+  renderAll();
+  document.getElementById('directAmount').value = '';
+  document.getElementById('directNote').value = '';
+}
+
+function deleteRecord(id) {
+  records = records.filter(r => r.id !== id);
+  save();
+  renderAll();
+}
+
+function save() { localStorage.setItem('calPriceRecords', JSON.stringify(records)); }
+
+// ── 달력 렌더 ──
+function renderAll() {
+  renderCalendar();
+  renderDayPanel();
+  renderChart();
+  renderMonthSummary();
+}
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  renderAll();
+}
+
+function renderCalendar() {
+  const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('monthTitle').innerHTML = `${viewYear}년 <span>${months[viewMonth]}</span>`;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  // 빈 칸
+  for (let i = 0; i < firstDay; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell empty';
+    grid.appendChild(cell);
+  }
+
+  // 날짜 칸
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = dateKey(viewYear, viewMonth, d);
+    const dayRecs = records.filter(r => r.date === key);
+    const dayTotal = dayRecs.reduce((a, r) => a + r.total, 0);
+    const dow = (firstDay + d - 1) % 7; // 0=Sun, 6=Sat
+
+    const cell = document.createElement('div');
+    let cls = 'cal-cell';
+    if (dow === 0) cls += ' sun';
+    if (dow === 6) cls += ' sat';
+    if (key === todayKey) cls += ' today';
+    if (dayRecs.length > 0) cls += ' has-record';
+    if (key === selectedDate) cls += ' selected';
+    cell.className = cls;
+
+    cell.innerHTML = `
+      <div class="day-num">${d}</div>
+      ${dayTotal > 0 ? `<div class="cell-amount">₩${fmt(dayTotal)}</div><div class="cell-count">${dayRecs.length}건</div>` : ''}
+    `;
+
+    cell.addEventListener('click', () => selectDate(key, d));
+    grid.appendChild(cell);
+  }
+}
+
+function selectDate(key, d) {
+  selectedDate = key;
+  const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('selectedDateDisplay').textContent =
+    `${viewYear}년 ${months[viewMonth]} ${d}일`;
+  renderAll();
+}
+
+function renderDayPanel() {
+  const panel = document.getElementById('dayPanel');
+  if (!selectedDate) { panel.style.display = 'none'; return; }
+
+  const dayRecs = records.filter(r => r.date === selectedDate);
+  const dayTotal = dayRecs.reduce((a, r) => a + r.total, 0);
+  const [y, m, d] = selectedDate.split('-');
+  const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const dateLabel = `${y}년 ${months[parseInt(m)-1]} ${parseInt(d)}일`;
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="dp-header">
+      <div class="dp-date">📅 ${dateLabel}</div>
+      <div class="dp-total">합계 ₩${fmt(dayTotal)}</div>
+    </div>
+    <div class="dp-records">
+      ${dayRecs.length === 0
+        ? `<div class="dp-empty">이 날짜에 기록이 없습니다.<br>왼쪽에서 치수를 입력 후 추가하세요.</div>`
+        : dayRecs.map((r, i) => `
+          <div class="dp-item${r.type === 'direct' ? ' dp-direct' : ''}">
+            <span class="dp-num">${i+1}</span>
+            <div class="dp-info">
+              ${r.type === 'direct'
+                ? `<div class="dp-dims" style="color:var(--accent2)">💰 직접 입력</div>`
+                : `<div class="dp-dims">${r.width} × ${r.height} ${r.unit}</div>
+                   <div class="dp-area">면적 ${r.area.toFixed(4).replace(/\.?0+$/,'')} ${r.unit}</div>`
+              }
+              ${r.note ? `<div class="dp-note">${r.note}</div>` : ''}
+            </div>
+            <div class="dp-amount" style="${r.type === 'direct' ? 'color:var(--accent2)' : ''}">₩${fmt(r.total)}</div>
+            <button class="dp-del" onclick="deleteRecord(${r.id})">×</button>
+          </div>
+        `).join('')
+      }
+    </div>
+  `;
+}
+
+function renderMonthSummary() {
+  const y = viewYear, m = viewMonth;
+  const filtered = records.filter(r => {
+    const parts = r.date.split('-').map(Number);
+    return parts[0] === y && parts[1] === m + 1;
+  });
+  const total = filtered.reduce((a, r) => a + r.total, 0);
+  const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('monthTotalDisp').textContent = '₩' + fmt(total);
+  document.getElementById('monthCountDisp').textContent = filtered.length + '건';
+  const lbl = document.getElementById('monthYearLabel');
+  if (lbl) lbl.textContent = y + '년 ' + months[m] + ' 누적';
+}
+
+function renderChart() {
+  const bars = document.getElementById('chartBars');
+  bars.innerHTML = '';
+
+  const y = viewYear, m = viewMonth;
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  document.getElementById('chartMonthLabel').textContent =
+    `${y}년 ${m+1}월`;
+
+  // 주차별 집계
+  const weeks = [];
+  let weekIdx = 0;
+  let weekTotal = 0;
+  const firstDow = new Date(y, m, 1).getDay();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = dateKey(y, m, d);
+    const dayTotal = records.filter(r => r.date === key).reduce((a, r) => a + r.total, 0);
+    weekTotal += dayTotal;
+    const dow = (firstDow + d - 1) % 7;
+    if (dow === 6 || d === daysInMonth) {
+      weeks.push({ label: `${weekIdx+1}주`, total: weekTotal });
+      weekIdx++;
+      weekTotal = 0;
+    }
+  }
+
+  const maxVal = Math.max(...weeks.map(w => w.total), 1);
+
+  weeks.forEach((w, i) => {
+    const height = Math.max((w.total / maxVal) * 72, w.total > 0 ? 6 : 4);
+    const isSelected = selectedDate &&
+      (() => {
+        const [sy, sm, sd] = selectedDate.split('-').map(Number);
+        if (sm !== m + 1 || sy !== y) return false;
+        // which week index is the selected day in?
+        const fd = new Date(y, m, 1).getDay();
+        const wi = Math.floor((fd + sd - 1) / 7);
+        return wi === i;
+      })();
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bar-wrap';
+    wrap.innerHTML = `
+      <div class="bar ${w.total > 0 ? 'has-val' : ''} ${isSelected ? 'active' : ''}"
+           style="height:${height}px"
+           title="₩${fmt(w.total)}"></div>
+      <div class="bar-label">${w.label}</div>
+    `;
+    bars.appendChild(wrap);
+  });
+}
+
+// ── 초기화 ──
+calculate();
+renderAll();
+</script>
+
+<!-- PWA 설치 배너 -->
+<div id="pwaBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:#1a1814;color:#f5f2ec;padding:14px 20px;
+  display:none;align-items:center;gap:12px;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.18);font-family:'Noto Sans KR',sans-serif;">
+  <span style="font-size:22px">📐</span>
+  <div style="flex:1">
+    <div style="font-size:13px;font-weight:700;">앱으로 설치하기</div>
+    <div style="font-size:11px;color:rgba(245,242,236,0.55);margin-top:2px;">홈 화면에 추가하면 앱처럼 사용할 수 있어요</div>
+  </div>
+  <button id="pwaInstallBtn" style="background:#c94f2a;border:none;border-radius:8px;
+    color:#fff;padding:9px 18px;font-size:13px;font-weight:700;
+    font-family:'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap;">설치</button>
+  <button onclick="document.getElementById('pwaBar').style.display='none'"
+    style="background:none;border:none;color:rgba(245,242,236,0.4);font-size:20px;cursor:pointer;padding:2px 4px;line-height:1;">×</button>
+</div>
+
+<script>
+// ── PWA Service Worker 등록 ──
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'danggae-v1';
+    const ASSETS = [location.href];
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+    });
+  `;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+
+// ── 설치 프롬프트 ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const bar = document.getElementById('pwaBar');
+  bar.style.display = 'flex';
+});
+
+document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('pwaBar').style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaBar').style.display = 'none';
+});
+</script>
+</body>
+</html>
